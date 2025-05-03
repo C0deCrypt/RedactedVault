@@ -11,148 +11,151 @@ GOLD = "#DAA520"
 HOVER = "#FF4500"
 BORDER = "#333333"
 
+def animate_text(label, text):
+    """Typewriter effect for text animation"""
+    label.config(text="")
+    for i in range(len(text) + 1):
+        label.after(50 * i, lambda s=text[:i]: label.config(text=s))
 
-class VaultUI:
-    def __init__(self, master):
-        self.master = master
-        master.geometry("1280x720")
-        master.configure(bg=BG)
+def add_file_card(parent, filename, icon, idx):
+    """Create a file card with hover effects"""
+    card = tk.Frame(parent, bg="#252525", bd=0)
+    card.pack(fill="x", pady=2, padx=2)
 
-        # Main Container with subtle border
-        self.main_frame = tk.Frame(master, bg=BORDER, padx=1, pady=1)
-        self.main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+    # File Icon
+    tk.Label(card, text=icon, bg="#252525", fg=GOLD,
+            font=("Segoe UI Emoji", 14)).pack(side="left", padx=10)
 
-        # Content Area
-        self.content = tk.Frame(self.main_frame, bg=BG)
-        self.content.pack(fill="both", expand=True)
+    # Filename
+    name_label = tk.Label(card, text=filename, bg="#252525", fg=TEXT,
+                         font=("Consolas", 10), anchor="w")
+    name_label.pack(side="left", fill="x", expand=True)
 
-        # User Profile Header
-        self.header = tk.Frame(self.content, bg=BG, bd=0)
-        self.header.pack(fill="x", pady=(20, 10), padx=20)
+    # Selection Checkbox
+    var = tk.IntVar()
+    chk = tk.Checkbutton(card, variable=var, bg="#252525",
+                        activebackground="#252525", selectcolor=BG)
+    chk.pack(side="right", padx=10)
 
-        # Anime Avatar (Replaced circle)
-        try:
-            self.avatar_img = Image.open("avatar.png").resize((80, 80))
-            self.avatar_photo = ImageTk.PhotoImage(self.avatar_img)
-            self.avatar_label = tk.Label(self.header, image=self.avatar_photo, bg=BG)
-        except:
-            # Fallback if image not found
-            self.avatar_label = tk.Label(self.header, text="👤", bg=BG, fg=GOLD,
-                                         font=("Segoe UI Emoji", 36))
-        self.avatar_label.pack(side="left")
+    # Hover effect
+    card.bind("<Enter>", lambda e, c=card: c.config(bg="#333"))
+    card.bind("<Leave>", lambda e, c=card: c.config(bg="#252525"))
+    return card
 
-        # User Info
-        self.user_frame = tk.Frame(self.header, bg=BG)
-        self.user_frame.pack(side="left", padx=15)
+def add_btn_light(button):
+    """Add hover effects to buttons"""
+    button.bind("<Enter>", lambda e: button.config(fg=HOVER))
+    button.bind("<Leave>", lambda e: button.config(fg=TEXT))
+    button.config(highlightbackground=BORDER, highlightthickness=1)
 
-        tk.Label(self.user_frame, text="AGENT PROFILE", bg=BG, fg=CORAL,
-                 font=("Terminal", 10)).pack(anchor="w")
-        self.user_label = tk.Label(self.user_frame, text="", bg=BG, fg=TEXT,
-                                   font=("Terminal", 12))
-        self.user_label.pack(anchor="w")
-        self.animate_text("Cyber_Operative_7", self.user_label)
+def create_vault_ui(root):
+    """Main function to create the vault interface"""
+    # Window setup
+    root.geometry("1280x720")
+    root.configure(bg="#000000")
+    root.title("NEO VAULT")
 
-        # File Display Area with border
-        self.file_container = tk.Frame(self.content, bg=BORDER, padx=1, pady=1)
-        self.file_container.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+    # Main Container with subtle border
+    main_frame = tk.Frame(root, bg=BORDER, padx=1, pady=1)
+    main_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-        self.file_canvas = tk.Canvas(self.file_container, bg=BG, highlightthickness=0)
-        self.scrollbar = ttk.Scrollbar(self.file_container, orient="vertical",
-                                       command=self.file_canvas.yview)
-        self.scrollable_frame = tk.Frame(self.file_canvas, bg=BG)
+    # Content Area
+    content = tk.Frame(main_frame, bg=BG)
+    content.pack(fill="both", expand=True)
 
-        self.scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self.file_canvas.configure(
-                scrollregion=self.file_canvas.bbox("all")
-            )
-        )
+    # User Profile Header
+    header = tk.Frame(content, bg=BG, bd=0)
+    header.pack(fill="x", pady=(20, 10), padx=20)
 
-        self.file_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        self.file_canvas.configure(yscrollcommand=self.scrollbar.set)
+    # Avatar
+    try:
+        avatar_img = Image.open("avatar.png").resize((80, 80))
+        avatar_photo = ImageTk.PhotoImage(avatar_img)
+        avatar_label = tk.Label(header, image=avatar_photo, bg=BG)
+        avatar_label.image = avatar_photo  # Keep reference
+    except:
+        avatar_label = tk.Label(header, text="👤", bg=BG, fg=GOLD,
+                              font=("Segoe UI Emoji", 36))
+    avatar_label.pack(side="left")
 
-        self.file_canvas.pack(side="left", fill="both", expand=True)
-        self.scrollbar.pack(side="right", fill="y")
+    # User Info
+    user_frame = tk.Frame(header, bg=BG)
+    user_frame.pack(side="left", padx=15)
 
-        # Sample Files
-        files = [
-            ("secret_plans.txt", "📄"),
-            ("bitcoin_keys.pdf", "📄"),
-            ("mission_briefing.mp4", "🎥"),
-            ("suspicious_cat.jpg", "🖼️"),
-            ("backup_codes.txt", "📄")
-        ]
+    tk.Label(user_frame, text="AGENT PROFILE", bg=BG, fg=CORAL,
+            font=("Terminal", 10)).pack(anchor="w")
+    user_label = tk.Label(user_frame, text="", bg=BG, fg=TEXT,
+                         font=("Terminal", 12))
+    user_label.pack(anchor="w")
+    animate_text(user_label, "Cyber_Operative_7")
 
-        for i, (fname, icon) in enumerate(files):
-            self.add_file_card(fname, icon, i)
+    # File Display Area
+    file_container = tk.Frame(content, bg=BORDER, padx=1, pady=1)
+    file_container.pack(fill="both", expand=True, padx=20, pady=(0, 20))
 
-        # Control Buttons with subtle lighting
-        self.controls = tk.Frame(self.content, bg=BG)
-        self.controls.pack(fill="x", pady=(0, 20), padx=20)
+    file_canvas = tk.Canvas(file_container, bg=BG, highlightthickness=0)
+    scrollbar = ttk.Scrollbar(file_container, orient="vertical",
+                             command=file_canvas.yview)
+    scrollable_frame = tk.Frame(file_canvas, bg=BG)
 
-        buttons = [
-            ("➕ Add", self.add_file),
-            ("👁️ View", self.view_file),
-            ("🗑️ Delete", self.delete_file),
-            ("🔐 Lock", lambda: master.quit())
-        ]
+    scrollable_frame.bind(
+        "<Configure>",
+        lambda e: file_canvas.configure(scrollregion=file_canvas.bbox("all"))
+    )
 
-        for text, cmd in buttons:
-            btn = tk.Button(self.controls, text=text, bg=BG, fg=TEXT,
-                            activebackground=HOVER, bd=0, font=("Terminal", 10),
-                            command=cmd)
-            btn.pack(side="left", padx=10)
-            self.add_btn_light(btn)
+    file_canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    file_canvas.configure(yscrollcommand=scrollbar.set)
 
-    def animate_text(self, text, label):
-        label.config(text="")
-        for i in range(len(text) + 1):
-            label.after(50 * i, lambda s=text[:i]: label.config(text=s))
+    file_canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
 
-    def add_file_card(self, filename, icon, idx):
-        card = tk.Frame(self.scrollable_frame, bg="#252525", bd=0)
-        card.pack(fill="x", pady=2, padx=2)
+    # Sample Files
+    files = [
+        ("secret_plans.txt", "📄"),
+        ("bitcoin_keys.pdf", "📄"),
+        ("mission_briefing.mp4", "🎥"),
+        ("suspicious_cat.jpg", "🖼️"),
+        ("backup_codes.txt", "📄")
+    ]
 
-        # File Icon
-        tk.Label(card, text=icon, bg="#252525", fg=GOLD,
-                 font=("Segoe UI Emoji", 14)).pack(side="left", padx=10)
+    for i, (fname, icon) in enumerate(files):
+        add_file_card(scrollable_frame, fname, icon, i)
 
-        # Filename
-        name_label = tk.Label(card, text=filename, bg="#252525", fg=TEXT,
-                              font=("Consolas", 10), anchor="w")
-        name_label.pack(side="left", fill="x", expand=True)
+    # Control Buttons
+    controls = tk.Frame(content, bg=BG)
+    controls.pack(fill="x", pady=(0, 20), padx=20)
 
-        # Selection Checkbox
-        var = tk.IntVar()
-        chk = tk.Checkbutton(card, variable=var, bg="#252525", activebackground="#252525",
-                             selectcolor=BG)
-        chk.pack(side="right", padx=10)
-
-        # Hover effect
-        card.bind("<Enter>", lambda e, c=card: c.config(bg="#333"))
-        card.bind("<Leave>", lambda e, c=card: c.config(bg="#252525"))
-
-    def add_btn_light(self, widget):
-        # Subtle border lighting effect
-        widget.bind("<Enter>", lambda e: widget.config(fg=HOVER))
-        widget.bind("<Leave>", lambda e: widget.config(fg=TEXT))
-
-        # Add permanent thin border
-        widget.config(highlightbackground=BORDER, highlightthickness=1)
-
-    def add_file(self):
+    def add_file():
         print("Add file dialog")
 
-    def view_file(self):
+    def view_file():
         print("View file with auth check")
 
-    def delete_file(self):
+    def delete_file():
         print("Delete confirmation")
 
+    buttons = [
+        ("➕ Add", add_file),
+        ("👁️ View", view_file),
+        ("🗑️ Delete", delete_file),
+        ("🔐 Lock", root.quit)
+    ]
 
-# Run
-root = tk.Tk()
-root.title("NEO VAULT")
-root.configure(bg="#000000")
-VaultUI(root)
-root.mainloop()
+    for text, cmd in buttons:
+        btn = tk.Button(controls, text=text, bg=BG, fg=TEXT,
+                       activebackground=HOVER, bd=0, font=("Terminal", 10),
+                       command=cmd)
+        btn.pack(side="left", padx=10)
+        add_btn_light(btn)
+
+    return {
+        'root': root,
+        'file_canvas': file_canvas,
+        'scrollable_frame': scrollable_frame
+    }
+
+# Run the application
+if __name__ == "__main__":
+    root = tk.Tk()
+    ui = create_vault_ui(root)
+    root.mainloop()
