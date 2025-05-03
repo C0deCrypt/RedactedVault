@@ -51,11 +51,24 @@ def get_files_for_user(user_id):
         if 'cursor' in locals():
             cursor.close()
 
+
 def log_access(user_id, event_type, details=None):
     """Record access attempts"""
     conn = get_connection()
     try:
         cursor = conn.cursor()
+        query = """
+            CREATE TABLE IF NOT EXISTS vault_access_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                event_type VARCHAR(50) NOT NULL,
+                details TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """
+        cursor.execute(query)
+
         query = """
             INSERT INTO vault_access_logs 
             (user_id, event_type, details)
@@ -65,6 +78,7 @@ def log_access(user_id, event_type, details=None):
         conn.commit()
     except Error as e:
         print(f"Logging failed: {e}")
+        conn.rollback()
     finally:
         if 'cursor' in locals():
             cursor.close()
