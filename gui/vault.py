@@ -17,30 +17,42 @@ def animate_text(label, text):
     for i in range(len(text) + 1):
         label.after(50 * i, lambda s=text[:i]: label.config(text=s))
 
+
 def add_file_card(parent, filename, icon, idx):
-    """Create a file card with hover effects"""
-    card = tk.Frame(parent, bg="#252525", bd=0)
-    card.pack(fill="x", pady=2, padx=2)
+    """Create full-width row with proper spacing"""
+    row = tk.Frame(parent, bg="#252525", bd=0, highlightthickness=0)
+    row.pack(fill="x", pady=1, ipady=5)  # Internal padding for height
 
-    # File Icon
-    tk.Label(card, text=icon, bg="#252525", fg=GOLD,
-            font=("Segoe UI Emoji", 14)).pack(side="left", padx=10)
+    # Left-aligned icon
+    icon_label = tk.Label(row, text=icon, bg="#252525", fg=GOLD,
+                          font=("Segoe UI Emoji", 14), padx=10)
+    icon_label.pack(side="left")
 
-    # Filename
-    name_label = tk.Label(card, text=filename, bg="#252525", fg=TEXT,
-                         font=("Consolas", 10), anchor="w")
-    name_label.pack(side="left", fill="x", expand=True)
+    # Expanding filename
+    name_label = tk.Label(row, text=filename, bg="#252525", fg=TEXT,
+                          font=("Consolas", 11), anchor="w")
+    name_label.pack(side="left", fill="x", expand=True, padx=5)
 
-    # Selection Checkbox
+    # Right-aligned checkbox
     var = tk.IntVar()
-    chk = tk.Checkbutton(card, variable=var, bg="#252525",
-                        activebackground="#252525", selectcolor=BG)
-    chk.pack(side="right", padx=10)
+    chk = tk.Checkbutton(row, variable=var, bg="#252525",
+                         activebackground="#252525", selectcolor=BG,
+                         bd=0, highlightthickness=0, padx=10)
+    chk.pack(side="right")
 
     # Hover effect
-    card.bind("<Enter>", lambda e, c=card: c.config(bg="#333"))
-    card.bind("<Leave>", lambda e, c=card: c.config(bg="#252525"))
-    return card
+    def set_hover(color):
+        row.config(bg=color)
+        for child in row.winfo_children():
+            if isinstance(child, tk.Label):
+                child.config(bg=color)
+            elif isinstance(child, tk.Checkbutton):
+                child.config(bg=color, activebackground=color)
+
+    row.bind("<Enter>", lambda e: set_hover("#333"))
+    row.bind("<Leave>", lambda e: set_hover("#252525"))
+
+    return row
 
 def add_btn_light(button):
     """Add hover effects to buttons"""
@@ -57,7 +69,7 @@ def create_vault_ui(root):
 
     # Main Container with subtle border
     main_frame = tk.Frame(root, bg=BORDER, padx=1, pady=1)
-    main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+    main_frame.pack(fill="both", expand=True)
 
     # Content Area
     content = tk.Frame(main_frame, bg=BG)
@@ -91,23 +103,31 @@ def create_vault_ui(root):
 
     # File Display Area
     file_container = tk.Frame(content, bg=BORDER, padx=1, pady=1)
-    file_container.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+    file_container.pack(fill="both", expand=True, padx=20, pady=(0, 20))  # Restored outer padding
 
     file_canvas = tk.Canvas(file_container, bg=BG, highlightthickness=0)
     scrollbar = ttk.Scrollbar(file_container, orient="vertical",
-                             command=file_canvas.yview)
+                              command=file_canvas.yview)
+
     scrollable_frame = tk.Frame(file_canvas, bg=BG)
 
-    scrollable_frame.bind(
-        "<Configure>",
-        lambda e: file_canvas.configure(scrollregion=file_canvas.bbox("all"))
-    )
+    def on_canvas_configure(e):
+        # Set scrollable frame width to match canvas minus scrollbar
+        frame_width = e.width - scrollbar.winfo_width()
+        file_canvas.itemconfig("frame", width=frame_width)
+        file_canvas.configure(scrollregion=file_canvas.bbox("all"))
 
-    file_canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    file_canvas.create_window((0, 0), window=scrollable_frame,
+                              anchor="nw", tags=("frame",))
+    file_canvas.bind("<Configure>", on_canvas_configure)
     file_canvas.configure(yscrollcommand=scrollbar.set)
 
     file_canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
+
+    # Add this to prevent frame shrinking
+    scrollable_frame.bind("<Configure>",
+                          lambda e: file_canvas.configure(scrollregion=file_canvas.bbox("all")))
 
     # Sample Files
     files = [
