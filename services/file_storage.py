@@ -6,7 +6,6 @@ from cryptography.hazmat.primitives import padding
 import tempfile
 import shutil
 from pathlib import Path
-from db.db_manager import get_connection  # Corrected import statement
 
 
 class FileStorageSystem:
@@ -20,7 +19,7 @@ class FileStorageSystem:
 
     def _pad_data(self, data):
         """Pad data to be a multiple of the block size"""
-        padder = padding.PKCS7(128).padder()
+        padder = padding.PCS7(128).padder()
         padded_data = padder.update(data) + padder.finalize()
         return padded_data
 
@@ -85,108 +84,32 @@ class FileStorageSystem:
 
         return output_path
 
-    def add_file_to_vault(self, user_id, source_path, filename=None):
-        """Add a file to the vault for a specific user"""
-        if filename is None:
-            filename = os.path.basename(source_path)
-
-        conn = get_connection()
-        cursor = conn.cursor()
-
+    def open_decrypted_file(self, decrypted_path):
+        """Open decrypted file with default program and return temp directory for cleanup"""
         try:
-            # Get or create user's encryption key
-            cursor.execute("SELECT encrypted_key FROM users WHERE id = %s", (user_id,))
-            result = cursor.fetchone()
+            if os.name == 'nt':
+                os.startfile(decrypted_path)
+            elif os.name == 'posix':
+                if os.uname().sysname == 'Darwin':
+                    os.system(f'open "{decrypted_path}"')
+                else:
+                    os.system(f'xdg-open "{decrypted_path}"')
 
-            if result and result[0]:
-                key = result[0]  # Assuming key is stored as binary in MySQL
-            else:
-                key = self._generate_aes_key()
-                cursor.execute(
-                    "UPDATE users SET encrypted_key = %s WHERE id = %s",
-                    (key, user_id))
-                conn.commit()
+            # Return the temp directory containing the file for later cleanup
+            return os.path.dirname(decrypted_path)
+        except Exception as e:
+            # Clean up if opening fails
+            temp_dir = os.path.dirname(decrypted_path)
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            raise e
 
-            # Encrypt and store the file
-            encrypted_path = self.encrypt_file(source_path, key)
+    def cleanup_temp_files(self, temp_dir):
+        """Clean up temporary decrypted files"""
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
-            # Add to database
-            cursor.execute(
-                "INSERT INTO files (user_id, filename, filepath) VALUES (%s, %s, %s)",
-                (user_id, filename, encrypted_path))
-            conn.commit()
-
-            return cursor.lastrowid
-        finally:
-            cursor.close()
-
-    def open_file_from_vault(self, file_id, user_id):
-        """Open a file from the vault"""
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-
+    def delete_encrypted_file(self, encrypted_path):
+        """Delete encrypted file from storage"""
         try:
-            cursor.execute(
-                "SELECT filepath FROM files WHERE id = %s AND user_id = %s",
-                (file_id, user_id))
-            result = cursor.fetchone()
-
-            if not result:
-                raise ValueError("File not found or access denied")
-
-            cursor.execute(
-                "SELECT encrypted_key FROM users WHERE id = %s",
-                (user_id,))
-            key_result = cursor.fetchone()
-
-            if not key_result or not key_result['encrypted_key']:
-                raise ValueError("User key not found")
-
-            encrypted_path = result['filepath']
-            key = key_result['encrypted_key']
-            temp_path = self.decrypt_file(encrypted_path, key)
-
-            # Open with default program
-            try:
-                if os.name == 'nt':
-                    os.startfile(temp_path)
-                elif os.name == 'posix':
-                    if os.uname().sysname == 'Darwin':
-                        os.system(f'open "{temp_path}"')
-                    else:
-                        os.system(f'xdg-open "{temp_path}"')
-            except Exception as e:
-                os.remove(temp_path)
-                raise e
-        finally:
-            cursor.close()
-
-    def delete_file_from_vault(self, file_id, user_id):
-        """Delete a file from the vault"""
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        try:
-            cursor.execute(
-                "SELECT filepath FROM files WHERE id = %s AND user_id = %s",
-                (file_id, user_id))
-            result = cursor.fetchone()
-
-            if not result:
-                raise ValueError("File not found or access denied")
-
-            encrypted_path = result['filepath']
-
-            # Delete from filesystem
-            try:
-                os.remove(encrypted_path)
-            except OSError:
-                pass
-
-            # Delete from database
-            cursor.execute(
-                "DELETE FROM files WHERE id = %s AND user_id = %s",
-                (file_id, user_id))
-            conn.commit()
-        finally:
-            cursor.close()
+            os.remove(encrypted_path)
+        except OSError:
+            pass
