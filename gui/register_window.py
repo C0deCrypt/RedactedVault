@@ -81,6 +81,14 @@ def create_registration_window():
     finger_btn.pack(side="left", padx=10)
 
     # Register button - refined styling
+
+    def on_register():
+        #TODO: Here you guys will handle registeration, because when user is clicking on register btn we are calling this function
+        username = username_entry.get()
+        code = code_entry.get()
+        method = bio_var.get() #is my type hai k finger use honi yaa face, dekh lena isko
+        print("Register btn is clicked")
+
     register_btn = tk.Button(
         content, text="REGISTRATION",
         bg=CORAL,  # Coral color instead of grey
@@ -90,7 +98,8 @@ def create_registration_window():
         bd=0,
         padx=15,
         pady=6,
-        relief="flat"
+        relief="flat",
+        command= on_register
     )
     register_btn.pack(pady=55, ipady=3)
 
