@@ -68,8 +68,7 @@ def get_files_for_user():
         cursor = conn.cursor(dictionary=True)
         query = """
             SELECT id, filename, filepath, 
-                   DATE_FORMAT(date_added, '%Y-%m-%d %H:%i') as formatted_date,
-                   file_size, file_type
+                   DATE_FORMAT(date_added, '%Y-%m-%d %H:%i') as formatted_date
             FROM files 
             WHERE user_id = %s
             ORDER BY date_added DESC
