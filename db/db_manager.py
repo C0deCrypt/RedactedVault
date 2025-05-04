@@ -10,6 +10,18 @@ _current_user = None
 _current_user_id = None
 _file_storage = FileStorageSystem()
 
+def with_transaction(func):
+    """Decorator for automatic transaction management"""
+    def wrapper(*args, **kwargs):
+        conn = get_connection()
+        try:
+            result = func(conn, *args, **kwargs)  # Note: conn is now passed
+            conn.commit()
+            return result
+        except Exception as e:
+            conn.rollback()
+            raise
+    return wrapper
 
 def set_current_user(user, user_id):
     """Set the currently authenticated user"""
@@ -91,37 +103,45 @@ def get_user_encryption_key(user_id):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
     try:
-        cursor.execute("SELECT encrypted_key FROM users WHERE id = %s", (user_id,))
+        cursor.execute("SELECT `encrypted_key` FROM `users` WHERE `id` = %s", (user_id,))
         result = cursor.fetchone()
-        return result['encrypted_key'] if result else None
+        if not result:
+            return None
+        return result['encrypted_key']
+    except mysql.connector.Error as e:
+        print(f"Database error: {e}")
+        return None
     finally:
         cursor.close()
 
-def update_user_encryption_key(user_id, key):
+@with_transaction
+def update_user_encryption_key(conn, user_id, key):
     """Store/update user's encryption key in database"""
-    conn = get_connection()
     cursor = conn.cursor()
     try:
         cursor.execute(
             "UPDATE users SET encrypted_key = %s WHERE id = %s",
             (key, user_id))
-        conn.commit()
     finally:
         cursor.close()
 
-def add_file_to_db(user_id, filename, encrypted_path):
-    """Store file metadata in database"""
-    conn = get_connection()
+@with_transaction
+def add_file_to_db(conn, user_id, filename, encrypted_path):
+    """Store file metadata in database with transaction support"""
     cursor = conn.cursor()
     try:
+        # Verify user exists
+        cursor.execute("SELECT 1 FROM users WHERE id = %s", (user_id,))
+        if not cursor.fetchone():
+            raise ValueError(f"User {user_id} does not exist")
+
+        # Insert file record
         cursor.execute(
             "INSERT INTO files (user_id, filename, filepath) VALUES (%s, %s, %s)",
             (user_id, filename, encrypted_path))
-        conn.commit()
         return cursor.lastrowid
     finally:
         cursor.close()
-
 def get_file_from_db(file_id, user_id):
     """Retrieve file record if it belongs to the user"""
     conn = get_connection()
