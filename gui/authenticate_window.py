@@ -34,7 +34,7 @@ def create_auth_window():
 
     # Username field
     tk.Label(content, text="Agent Codename:", bg=BG, fg=TEXT,
-             font=("Terminal", 11)).pack(anchor="w", padx=20)
+             font=("Terminal", 12)).pack(anchor="w", padx=20)
 
     username_entry = tk.Entry(content, bg="#252525", fg=TEXT,
                               font=("Consolas", 11),
@@ -43,19 +43,6 @@ def create_auth_window():
                               highlightcolor=BORDER)
     username_entry.pack(fill="x", padx=20, pady=(5, 15), ipady=5)
 
-    # Unlock code field
-    tk.Label(content, text="Authentication Code:",
-             bg=BG, fg=TEXT, font=("Terminal", 11)).pack(anchor="w", padx=20)
-
-    vcmd = (root.register(validate_code_input), '%S')
-    code_entry = tk.Entry(content, bg="#252525", fg=TEXT,
-                          font=("Consolas", 11),
-                          validate="key", validatecommand=vcmd,
-                          insertbackground=TEXT, bd=0,
-                          highlightthickness=1,
-                          highlightcolor=BORDER,
-                          show="•")
-    code_entry.pack(fill="x", padx=20, pady=(5, 25), ipady=5)  # More space below
 
     # Biometric selection
     tk.Label(content, text="Biometric Authentication:",
@@ -81,6 +68,12 @@ def create_auth_window():
     finger_btn.pack(side="left", padx=10)
 
     # Authentication button
+    def on_auth():
+        # TODO: Here you guys will handle authentication, because when user is clicking on Auth btn we are calling this function
+        username = username_entry.get()
+        method = bio_var.get() #is my type hai k finger use honi yaa face, dekh lena isko
+        print("Auth btn is clicked")
+
     auth_btn = tk.Button(
         content, text="AUTHENTICATE",
         bg=CORAL,
@@ -90,9 +83,10 @@ def create_auth_window():
         bd=0,
         padx=15,
         pady=6,
-        relief="flat"
+        relief="flat",
+        command=on_auth
     )
-    auth_btn.pack(pady=55, ipady=3)
+    auth_btn.pack(pady=(95,55), ipady=3)
 
 
 
