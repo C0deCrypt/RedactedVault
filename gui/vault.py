@@ -1,6 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
+from db.db_manager import get_files_for_user, get_current_user, set_current_user
+
+# Delete it later
+set_current_user("cyber_ghost",2)
 
 # Colors
 BG = "#1C1C1C"  # Main background
@@ -9,6 +13,17 @@ CORAL = "#FF6F61"  # Accent color
 GOLD = "#DAA520"  # Highlight color
 HOVER = "#FF4500"  # Hover color
 BORDER = "#333333"  # Border color
+
+def get_file_icon(filename):
+    extension = filename.split('.')[-1].lower()
+    icon_map = {
+        'txt': '📄',  'pdf': '📄',  'doc': '📄', 'docx': '📄',
+        'jpg': '🖼️', 'png': '🖼️', 'gif': '🖼️',
+        'mp4': '🎥', 'mov': '🎥', 'avi': '🎥',
+        'zip': '🗄️', 'rar': '🗄️',
+        'exe': '⚙️', 'py': '🐍'
+    }
+    return icon_map.get(extension, '📁')  # Default icon
 
 # Global variable to track selected file
 selected_file_id = None
@@ -138,17 +153,26 @@ def create_vault_ui(root):
     file_canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
 
-    # Sample files (in real app, these would come from database)
-    files = [
-        ("secret_plans.txt", "📄", 1),
-        ("bitcoin_keys.pdf", "📄", 2),
-        ("mission_briefing.mp4", "🎥", 3),
-        ("suspicious_cat.jpg", "🖼️", 4),
-        ("backup_codes.txt", "📄", 5)
-    ]
+    try:
+        files = get_files_for_user()  # Returns list of dictionaries
+        for file_record in files:
+            # Extract fields from the database record
+            filename = file_record['filename']
+            file_id = file_record['id']
 
-    for filename, icon, file_id in files:
-        create_file_row(scrollable_frame, filename, icon, file_id)
+            # Get the appropriate icon based on filename
+            icon = get_file_icon(filename)
+
+            # Create the file row in the scrollable frame
+            create_file_row(scrollable_frame, filename, icon, file_id)
+
+    except Exception as e:
+        print(f"Unexpected error loading files: {e}")
+        # Generic error display
+        error_label = tk.Label(scrollable_frame,
+                               text="Failed to load files",
+                               fg=CORAL, bg=BG)
+        error_label.pack(pady=20)
 
     # Control buttons
     controls = tk.Frame(content, bg=BG)
@@ -210,6 +234,7 @@ def create_user_header(parent):
     avatar_label.pack(side="left")
 
     # User info
+    curr_user = get_current_user()
     user_frame = tk.Frame(header, bg=BG)
     user_frame.pack(side="left", padx=15)
 
@@ -219,7 +244,7 @@ def create_user_header(parent):
     user_label = tk.Label(user_frame, text="", bg=BG, fg=TEXT,
                           font=("Terminal", 12))
     user_label.pack(anchor="w")
-    animate_text(user_label, "Secure_User_01")
+    animate_text(user_label, curr_user)
 
     return header
 
