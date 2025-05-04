@@ -19,7 +19,7 @@ class FileStorageSystem:
 
     def _pad_data(self, data):
         """Pad data to be a multiple of the block size"""
-        padder = padding.PCS7(128).padder()
+        padder = padding.PKCS7(128).padder()
         padded_data = padder.update(data) + padder.finalize()
         return padded_data
 
