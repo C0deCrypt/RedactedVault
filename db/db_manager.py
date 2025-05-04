@@ -2,11 +2,13 @@ import mysql.connector
 from mysql.connector import Error
 import os
 from dotenv import load_dotenv
+from services.file_storage import FileStorageSystem
 
 # Initialize connection and user variables
 _connection = None
 _current_user = None
 _current_user_id = None
+_file_storage = FileStorageSystem()
 
 
 def set_current_user(user, user_id):
@@ -84,6 +86,65 @@ def get_files_for_user():
         if 'cursor' in locals():
             cursor.close()
 
+def get_user_encryption_key(user_id):
+    """Retrieve user's encryption key from database"""
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT encrypted_key FROM users WHERE id = %s", (user_id,))
+        result = cursor.fetchone()
+        return result['encrypted_key'] if result else None
+    finally:
+        cursor.close()
+
+def update_user_encryption_key(user_id, key):
+    """Store/update user's encryption key in database"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "UPDATE users SET encrypted_key = %s WHERE id = %s",
+            (key, user_id))
+        conn.commit()
+    finally:
+        cursor.close()
+
+def add_file_to_db(user_id, filename, encrypted_path):
+    """Store file metadata in database"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "INSERT INTO files (user_id, filename, filepath) VALUES (%s, %s, %s)",
+            (user_id, filename, encrypted_path))
+        conn.commit()
+        return cursor.lastrowid
+    finally:
+        cursor.close()
+
+def get_file_from_db(file_id, user_id):
+    """Retrieve file record if it belongs to the user"""
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "SELECT filepath FROM files WHERE id = %s AND user_id = %s",
+            (file_id, user_id))
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+
+def delete_file_from_db(file_id, user_id):
+    """Remove file record from database"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "DELETE FROM files WHERE id = %s AND user_id = %s",
+            (file_id, user_id))
+        conn.commit()
+    finally:
+        cursor.close()
 
 def log_access(event_type, details=None, user_id=None):
     """Record access attempts (uses current user if no ID provided)"""
@@ -107,3 +168,51 @@ def log_access(event_type, details=None, user_id=None):
     finally:
         if 'cursor' in locals():
             cursor.close()
+
+def add_file_to_vault(user_id, source_path, filename=None):
+    """Complete workflow: Encrypt file + store in DB"""
+    if filename is None:
+        filename = os.path.basename(source_path)
+
+    # Get or generate encryption key
+    key = get_user_encryption_key(user_id)
+    if not key:
+        key = _file_storage._generate_aes_key()
+        update_user_encryption_key(user_id, key)
+
+    # Encrypt and store file
+    encrypted_path = _file_storage.encrypt_file(source_path, key)
+
+    # Add to database
+    return add_file_to_db(user_id, filename, encrypted_path)
+
+def open_file_from_vault(file_id, user_id):
+    """Complete workflow: Decrypt file + open temporarily"""
+    # Verify file access
+    file_record = get_file_from_db(file_id, user_id)
+    if not file_record:
+        raise ValueError("File not found or access denied")
+
+    # Get decryption key
+    key = get_user_encryption_key(user_id)
+    if not key:
+        raise ValueError("Encryption key not found")
+
+    # Decrypt to temp location
+    decrypted_path = _file_storage.decrypt_file(file_record['filepath'], key)
+
+    # Open file and return temp directory for cleanup
+    return _file_storage.open_decrypted_file(decrypted_path)
+
+def delete_file_from_vault(file_id, user_id):
+    """Complete workflow: Delete file from storage + DB"""
+    # Verify file exists and belongs to user
+    file_record = get_file_from_db(file_id, user_id)
+    if not file_record:
+        raise ValueError("File not found or access denied")
+
+    # Delete encrypted file
+    _file_storage.delete_encrypted_file(file_record['filepath'])
+
+    # Remove DB record
+    delete_file_from_db(file_id, user_id)
