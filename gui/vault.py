@@ -12,6 +12,7 @@ BORDER = "#333333"  # Border color
 
 # Global variable to track selected file
 selected_file_id = None
+checkbox_vars = {} # {file_id: tk.IntVar()}
 
 
 def animate_text(label, text):
@@ -23,7 +24,7 @@ def animate_text(label, text):
 
 def create_file_row(parent, filename, icon, file_id):
     """Creates a single file row with selection checkbox"""
-    global selected_file_id
+    global selected_file_id, checkbox_vars
 
     row = tk.Frame(parent, bg="#252525", bd=0, highlightthickness=0)
     row.pack(fill="x", pady=1, ipady=5)
@@ -40,18 +41,19 @@ def create_file_row(parent, filename, icon, file_id):
 
     # Selection checkbox (only one file can be selected)
     var = tk.IntVar()
+    checkbox_vars[file_id] = var  # Store the variable
     chk = tk.Checkbutton(
         row,
         variable=var,
         bg="#252525",
         activebackground="#252525",
-        selectcolor=BG,  # Background when selected
-        fg=GOLD,  # Tick mark color (new)
-        activeforeground=GOLD,  # Tick mark color when active (new)
+        selectcolor=BG,
+        fg=GOLD,
+        activeforeground=GOLD,
         bd=0,
         highlightthickness=0,
         padx=10,
-        command=lambda: update_selection(file_id, var)
+        command=lambda: update_selection(file_id)
     )
     chk.pack(side="right")
 
@@ -68,13 +70,22 @@ def create_file_row(parent, filename, icon, file_id):
     return row
 
 
-def update_selection(file_id, checkbox_var):
+# Simplify the update_selection function
+def update_selection(file_id):
     """Handles file selection (only one file at a time)"""
-    global selected_file_id
-    if checkbox_var.get():  # If checkbox is checked
+    global selected_file_id, checkbox_vars
+
+    # If this checkbox is being checked
+    if checkbox_vars[file_id].get():
+        # Uncheck all other checkboxes
+        for fid, var in checkbox_vars.items():
+            if fid != file_id:
+                var.set(0)
+
         selected_file_id = file_id
     else:
         selected_file_id = None
+
     update_button_states()
 
 
