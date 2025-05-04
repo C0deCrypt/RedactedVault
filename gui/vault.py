@@ -1,11 +1,13 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
-from db.db_manager import get_files_for_user, get_current_user, set_current_user
+from db.db_manager import get_files_for_user, get_current_user, set_current_user, get_current_user_id
+from services.vault_services import VaultService
 
 # Delete it later
 set_current_user("cyber_ghost",2)
-
+curr_user = get_current_user()
+curr_user_id = get_current_user_id()
 # Colors
 BG = "#1C1C1C"  # Main background
 TEXT = "#F5E8D8"  # Text color
@@ -178,16 +180,36 @@ def create_vault_ui(root):
     controls = tk.Frame(content, bg=BG)
     controls.pack(fill="x", pady=(0, 20), padx=20)
 
+    vault_service = VaultService()
     def add_file():
-        print("Add file functionality would go here")
+        from tkinter import filedialog
+        path = filedialog.askopenfilename()
+        if path:
+            try:
+                vault_service.add_file_to_vault(curr_user_id, path)
+                print("File added successfully.")
+                root.destroy()
+                create_vault_ui(tk.Tk())  # Reload UI to reflect new file
+            except Exception as e:
+                print(f"Error adding file: {e}")
 
     def view_file():
         if selected_file_id:
-            print(f"Viewing file ID: {selected_file_id}")
+            try:
+                vault_service.open_file_from_vault(selected_file_id, curr_user_id)
+                print("File opened.")
+            except Exception as e:
+                print(f"Error viewing file: {e}")
 
     def delete_file():
         if selected_file_id:
-            print(f"Deleting file ID: {selected_file_id}")
+            try:
+                vault_service.delete_file_from_vault(selected_file_id, curr_user_id)
+                print("File deleted.")
+                root.destroy()
+                create_vault_ui(tk.Tk())  # Reload UI to reflect deletion
+            except Exception as e:
+                print(f"Error deleting file: {e}")
 
     # Create buttons
     add_btn = tk.Button(controls, text="➕ Add", bg=BG, fg=TEXT,
@@ -234,7 +256,6 @@ def create_user_header(parent):
     avatar_label.pack(side="left")
 
     # User info
-    curr_user = get_current_user()
     user_frame = tk.Frame(header, bg=BG)
     user_frame.pack(side="left", padx=15)
 
