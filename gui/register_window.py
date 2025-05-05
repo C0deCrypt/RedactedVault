@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+from face_registeration.face_registeration import register_face
+from db.db_manager import set_current_user
 
 # Colors (same as vault)
 BG = "#1C1C1C"  # Main background
@@ -14,7 +16,7 @@ def validate_code_input(char):
     return char in "0123456789+-/*="
 
 
-def create_registration_window():
+def create_registration_window(parent):
     root = tk.Tk()
     root.title("Agent Registration")
     root.geometry("500x600")
@@ -83,15 +85,31 @@ def create_registration_window():
     # Register button - refined styling
 
     def on_register():
-        #TODO: Here you guys will handle registeration, because when user is clicking on register btn we are calling this function
-        username = username_entry.get()
-        code = code_entry.get()
-        method = bio_var.get() #is my type hai k finger use honi yaa face, dekh lena isko
-        print("Register btn is clicked")
+        username = username_entry.get().strip()
+        code = code_entry.get().strip()
+        method = bio_var.get()
+
+        if not username or not code:
+            messagebox.showerror("Error", "Please fill in all fields.")
+            return
+
+        # Set the current user (replace 1 with actual user_id if needed)
+        set_current_user(username, 1)
+
+        if method == "face":
+            success = register_face(username)
+            if success:
+                messagebox.showinfo("Success", "Face registered successfully!")
+                root.destroy()  # Close window
+                parent.deiconify()
+            else:
+                messagebox.showerror("Failed", "Face registration failed.")
+        else:
+            messagebox.showinfo("Info", "Fingerprint not supported yet.")
 
     register_btn = tk.Button(
         content, text="REGISTRATION",
-        bg=CORAL,  # Coral color instead of grey
+        bg=CORAL,
         fg=TEXT,
         activebackground=HOVER,
         font=("Terminal", 12),
@@ -99,7 +117,7 @@ def create_registration_window():
         padx=15,
         pady=6,
         relief="flat",
-        command= on_register
+        command=on_register
     )
     register_btn.pack(pady=55, ipady=3)
 
@@ -112,7 +130,6 @@ def create_registration_window():
 
     register_btn.bind("<Enter>", on_enter)
     register_btn.bind("<Leave>", on_leave)
-
     root.mainloop()
 
 
