@@ -218,6 +218,19 @@ def get_files_for_user():
         if 'cursor' in locals():
             cursor.close()
 
+def get_user_encryption_key(user_id):
+    """Retrieve user's encryption key from database"""
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT encrypted_key FROM users WHERE id = %s", (user_id,))
+        result = cursor.fetchone()
+        return result['encrypted_key'] if result else None
+    finally:
+        cursor.close()
+
+
+
 def insert_file_record(user_id, original_name, hidden_path):
     conn = get_connection()
     try:
