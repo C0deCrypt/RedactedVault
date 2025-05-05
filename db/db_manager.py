@@ -27,6 +27,20 @@ def get_current_user_id():
     """Get the current user's ID"""
     return _current_user_id
 
+def get_user_id(username):
+    """
+    Get the user ID for the given username.
+    """
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    finally:
+        if cursor:
+            cursor.close()
+
 
 def get_connection():
     """Get or create MySQL connection"""
@@ -53,17 +67,16 @@ def close_connection():
         _connection.close()
         _connection = None
 
-def register_user_to_database(username, biometric_type, encrypted_data):
+def register_user_to_database(username, biometric_type, encrypted_data, unlock_code, encrypted_aes_key):
     """
-    Save a new user and their encrypted biometric data to MySQL.
-    Used during user registration.
+    Save a new user, their biometric data, unlock code, and encrypted AES key into MySQL.
     """
     conn = get_connection()
 
     try:
         cursor = conn.cursor()
 
-        # Check if the user already exists
+        # Check if user already exists
         cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
         result = cursor.fetchone()
 
@@ -73,19 +86,103 @@ def register_user_to_database(username, biometric_type, encrypted_data):
             cursor.execute("INSERT INTO users (username) VALUES (%s)", (username,))
             user_id = cursor.lastrowid
 
-        # Insert biometric data
+        # Save biometric data
         cursor.execute("""
             INSERT INTO biometric_data (user_id, type, data)
             VALUES (%s, %s, %s)
         """, (user_id, biometric_type, encrypted_data))
 
+        # Save vault settings (unlock code + AES key)
+        cursor.execute("""
+            INSERT INTO vault_settings (user_id, unlock_code, encrypted_aes_key)
+            VALUES (%s, %s, %s)
+        """, (user_id, unlock_code, encrypted_aes_key))
+
         conn.commit()
 
-        return user_id  # Return user ID in case you need to set it as current
+    except Error as e:
+        print(f"Error saving user to database: {e}")
+
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+
+def get_username_by_unlock_code(unlock_code):
+    """
+    Retrieve the username associated with a given unlock code.
+    Returns None if not found.
+    """
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        query = """
+            SELECT u.username
+            FROM users u
+            JOIN vault_settings v ON u.id = v.user_id
+            WHERE v.unlock_code = %s
+        """
+        cursor.execute(query, (unlock_code,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    except Error as e:
+        print(f"DB Error: {e}")
+        return None
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+
+
+def fetch_user_biometric(username, biometric_type):
+    """
+    Fetch encrypted biometric data for a user from the database.
+    Returns (user_id, encrypted_data) or (None, None) if not found.
+    """
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        # Get user_id
+        cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+        user_result = cursor.fetchone()
+        if not user_result:
+            return None, None
+        user_id = user_result[0]
+
+        # Get biometric data
+        cursor.execute("""
+            SELECT data FROM biometric_data 
+            WHERE user_id = %s AND type = %s
+        """, (user_id, biometric_type))
+        bio_result = cursor.fetchone()
+
+        if not bio_result:
+            return user_id, None
+
+        return user_id, bio_result[0]
 
     except Error as e:
-        print(f"Error saving user and biometric data: {e}")
+        print(f"DB error in fetch_user_biometric: {e}")
+        return None, None
 
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+
+def get_user_unlock_code(username):
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT unlock_code
+            FROM vault_settings
+            WHERE user_id = (
+                SELECT id FROM users WHERE username = %s
+            )
+        """, (username,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    except Error as e:
+        print(f"DB error in get_user_unlock_code: {e}")
+        return None
     finally:
         if 'cursor' in locals():
             cursor.close()
