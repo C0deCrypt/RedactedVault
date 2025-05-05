@@ -1,9 +1,10 @@
+# auth_manager.py
+
 import cv2
 import face_recognition
-from cryptography.fernet import Fernet
-from db.db_manager import get_connection
 import numpy as np
-
+from cryptography.fernet import Fernet
+from db.db_manager import fetch_user_biometric, get_user_unlock_code
 
 def load_key():
     """Load the saved encryption key."""
@@ -19,67 +20,38 @@ def decrypt_encoding(encrypted_data, key):
     return np.array(encoding_list)
 
 
-def get_user_encoding(username):
-    """Fetch encrypted face encoding for a specific username."""
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT b.data
-        FROM users u
-        JOIN biometric_data b ON u.id = b.user_id
-        WHERE u.username = %s AND b.type = 'face'
-    """, (username,))
-    result = cursor.fetchone()
-    cursor.close()
-    conn.close()
-
-    return result[0] if result else None
-
-
-def get_user_unlock_code(username):
-    """Fetch the unlock code for a specific username."""
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT unlock_code
-        FROM vault_settings
-        WHERE user_id = (
-            SELECT id FROM users WHERE username = %s
-        )
-    """, (username,))
-    result = cursor.fetchone()
-    cursor.close()
-    conn.close()
-
-    return result[0] if result else None
-
-
 def authenticate_face(username):
-    print("Face Authentication")
+    print("🔐 Face Authentication")
 
-    # Get the encrypted face encoding and unlock code from DB
-    encrypted_data = get_user_encoding(username)
-    unlock_code = get_user_unlock_code(username)
+    # Load key and fetch data from DB
+    key = load_key()
+    encrypted_data = None
+    unlock_code = None
+
+    try:
+        user_id, encrypted_data = fetch_user_biometric(username, 'face')
+        unlock_code = get_user_unlock_code(username)
+    except Exception as e:
+        print(f"Error accessing user data: {e}")
+        return False
 
     if not encrypted_data:
-        print("No face data found for this username.")
+        print("No face data found for this user.")
         return False
 
     if not unlock_code:
-        print("No unlock code found for this username.")
+        print("No unlock code found for this user.")
         return False
-
-    key = load_key()
 
     try:
         known_encoding = decrypt_encoding(encrypted_data, key)
     except Exception as e:
-        print(f"Error decrypting data for {username}: {e}")
+        print(f"Decryption failed: {e}")
         return False
 
-    # Begin face authentication process
+    # Begin face capture
     cap = cv2.VideoCapture(0)
-    print("Press 's' to scan your face for authentication.")
+    print("📷 Press 's' to scan your face for authentication.")
     auth_success = False
 
     while True:
@@ -98,29 +70,25 @@ def authenticate_face(username):
                 match = face_recognition.compare_faces([known_encoding], face_encoding)[0]
 
                 if match:
-                    print(f"Welcome back, {username}!")
+                    print(f"✅ Face matched. Welcome, {username}!")
                     auth_success = True
                 else:
-                    print("Face does not match this username.")
+                    print("❌ Face mismatch.")
             else:
-                print("No face detected. Try again.")
+                print("⚠️ No face detected. Try again.")
             break
 
     cap.release()
     cv2.destroyAllWindows()
 
     if auth_success:
-        print("Now, please enter the unlock code:")
-        entered_code = input()
+        print("✅ Authentication successful. Vault opened.")
+        return True
+    else:
+        print("❌ Error occured")
+        return False
 
-        if entered_code == unlock_code:
-            print("Authentication successful! Vault opened.")
-            return True
-        else:
-            print("Invalid unlock code.")
-            return False
-
-    return auth_success
+    return False
 
 
 if __name__ == "__main__":
