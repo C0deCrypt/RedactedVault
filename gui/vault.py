@@ -4,8 +4,7 @@ from PIL import Image, ImageTk
 from db.db_manager import get_files_for_user, get_current_user, set_current_user, get_current_user_id
 from services.vault_services import VaultService
 
-# Delete it later
-set_current_user("cyber_ghost",2)
+
 curr_user = get_current_user()
 curr_user_id = get_current_user_id()
 # Colors
