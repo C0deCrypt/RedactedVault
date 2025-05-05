@@ -1,10 +1,10 @@
 import os
 from db.db_manager import (
-    get_user_encryption_key,
-    update_user_encryption_key,
+    get_user_vault_settings,
     add_file_to_db,
     get_file_from_db,
-    delete_file_from_db
+    delete_file_from_db,
+    log_vault_access
 )
 from services.file_storage import FileStorageSystem
 
@@ -21,15 +21,26 @@ class VaultService:
         # Use original filename if none provided
         filename = filename or os.path.basename(source_path)
 
-        # Get user's key or make a new one
-        key = get_user_encryption_key(user_id)
+        # Get user's vault settings which contains the encrypted AES key
+        vault_settings = get_user_vault_settings(user_id)
+        if not vault_settings:
+            raise ValueError("User vault not initialized")
+
+        # Here you would need to decrypt the AES key using biometric authentication
+        # For now, we'll assume it's already decrypted and passed to this method
+        # In a real implementation, you would get the decrypted key from the auth process
+        key = vault_settings.get('decrypted_aes_key')
         if not key:
-            key = self.storage._generate_aes_key()
-            update_user_encryption_key(user_id, key)
+            raise ValueError("No decryption key available")
 
         # Encrypt and save to database
         encrypted_path = self.storage.encrypt_file(source_path, key)
-        return add_file_to_db(user_id, filename, encrypted_path)
+        file_id = add_file_to_db(user_id, filename, encrypted_path)
+
+        # Log the file addition
+        log_vault_access(user_id, 'file_add', f"Added file: {filename}")
+
+        return file_id
 
     def open_file_from_vault(self, file_id, user_id):
         """Open a vault file (decrypts it temporarily)"""
@@ -37,13 +48,24 @@ class VaultService:
         if not file_record:
             raise ValueError("File not found")
 
-        key = get_user_encryption_key(user_id)
+        # Get user's vault settings which contains the encrypted AES key
+        vault_settings = get_user_vault_settings(user_id)
+        if not vault_settings:
+            raise ValueError("User vault not initialized")
+
+        # Again, assuming decrypted key is available
+        key = vault_settings.get('decrypted_aes_key')
         if not key:
-            raise ValueError("No key found")
+            raise ValueError("No decryption key available")
 
         # Decrypt and open the file
         decrypted_path = self.storage.decrypt_file(file_record['filepath'], key)
-        return self.storage.open_decrypted_file(decrypted_path)
+        temp_dir = self.storage.open_decrypted_file(decrypted_path)
+
+        # Log the file access
+        log_vault_access(user_id, 'file_open', f"Opened file: {file_record['filename']}")
+
+        return temp_dir
 
     def delete_file_from_vault(self, file_id, user_id):
         """Permanently delete a file from vault"""
@@ -54,6 +76,9 @@ class VaultService:
         # Delete both the file and database record
         self.storage.delete_encrypted_file(file_record['filepath'])
         delete_file_from_db(file_id, user_id)
+
+        # Log the file deletion
+        log_vault_access(user_id, 'file_delete', f"Deleted file: {file_record['filename']}")
 
     def cleanup_temp_files(self, temp_dir):
         """Clean up temporary decrypted files"""
