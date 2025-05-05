@@ -88,12 +88,11 @@ def create_auth_window(passed_username):
                     set_current_user(entered_username, user_id)
                     messagebox.showinfo("Success", f"Welcome back, {entered_username}!")
 
-                    # Clear the current window
-                    for widget in root.winfo_children():
-                        widget.destroy()
+                    root.destroy()
 
-                    # Create vault UI in the same window
-                    create_vault_ui(root)
+                    vault_root = tk.Tk()
+                    create_vault_ui(vault_root)
+                    vault_root.mainloop()
             else:
                 messagebox.showerror("Failed", "Authentication failed.")
         else:
