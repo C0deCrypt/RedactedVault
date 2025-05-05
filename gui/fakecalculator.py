@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
+
+from db.db_manager import get_username_by_unlock_code
 from gui.authenticate_window import create_auth_window
 from gui.register_window import create_registration_window  # Import registration window
 
@@ -26,13 +28,18 @@ def create_calculator():
         display_var.set(expression)
 
         if expression.endswith(SECRET_TRIGGER):
-            root.withdraw()  # Hide root temporarily
+            root.withdraw()
             create_registration_window(root)
-            expression = ""  # Reset to prevent repeat triggers
+            expression = ""
             display_var.set("")
-        elif auth_code and expression == auth_code:
-            root.destroy()
-            create_auth_window()
+
+        elif len(expression) >= 6:  # Or whatever length your unlock code uses
+            username = get_username_by_unlock_code(expression)
+            if username:
+                root.destroy()
+                create_auth_window(username)  # Pass the username to auth window
+            else:
+                messagebox.showerror("Error", "Invalid unlock code.")
             expression = ""
             display_var.set("")
 
