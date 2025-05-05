@@ -10,7 +10,15 @@ SECRET_TRIGGER = "0000+-"
 
 
 expression = ""
+def generate_aes_key():
+    """Generate a 256-bit (32-byte) AES key."""
+    return os.urandom(32)
 
+
+def encrypt_aes_key(aes_key, master_key):
+    """Encrypt the AES key using the master Fernet key."""
+    fernet = Fernet(master_key)
+    return fernet.encrypt(aes_key)
 def generate_key():
     """Generate a new encryption key if not already present."""
     if not os.path.exists("secret.key"):
@@ -23,7 +31,7 @@ def load_key():
     with open("secret.key", "rb") as key_file:
         return key_file.read()
 
-def register_face(username):
+def register_face(username,code):
     """Function to register a user face and store the data in the database."""
     print("=== Face Registration ===")
 
@@ -54,10 +62,16 @@ def register_face(username):
     cv2.destroyAllWindows()
 
     if face_encoding is not None:
+        # Ask user for unlock code
+        unlock_code = code
+
         # Get or generate encryption key
         generate_key()
         key = load_key()
 
+        # Generate and encrypt AES key
+        aes_key = generate_aes_key()
+        encrypted_aes_key = encrypt_aes_key(aes_key, key)
 
         # Convert face encoding to a string (required for encryption)
         encoding_str = ','.join(map(str, face_encoding))
@@ -66,13 +80,9 @@ def register_face(username):
         fernet = Fernet(key)
         encrypted_data = fernet.encrypt(encoding_str.encode())
 
-        # Save encrypted data to the database
+        # Save encrypted data and unlock code to the database
         print("Saving face data to the database...")
-        register_user_to_database(username, "face", encrypted_data)
-
-
-        # logs will be saved for file crud and logins NOT REGISTER
-        # log_access("face_registration", f"Face registered for {username}")
+        register_user_to_database(username, "face", encrypted_data, unlock_code, encrypted_aes_key)
 
         print(f"🎉 {username} registered successfully!")
         return True
@@ -82,10 +92,6 @@ def register_face(username):
 
 
 if __name__ == "__main__":
-    username = input("Enter your username to register: ")
+    username = input("register working: ")
 
-    # Set the current user (assuming you already have authentication logic in place)
-    set_current_user(username, 1)  # Here 1 is a placeholder for user_id
 
-    # Register the face
-    register_face(username)
