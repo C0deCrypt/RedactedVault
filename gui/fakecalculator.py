@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import messagebox
-
 from db.db_manager import get_username_by_unlock_code
 from gui.authenticate_window import create_auth_window
 from gui.register_window import create_registration_window  # Import registration window

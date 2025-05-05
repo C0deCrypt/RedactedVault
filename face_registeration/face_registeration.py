@@ -3,7 +3,6 @@ import face_recognition
 from cryptography.fernet import Fernet
 import os
 from db.db_manager import set_current_user, get_current_user_id, get_user_encryption_key, register_user_to_database
-from db.db_manager import log_access
 
 # Secret code trigger
 SECRET_TRIGGER = "0000+-"
