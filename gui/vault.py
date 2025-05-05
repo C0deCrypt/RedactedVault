@@ -1,4 +1,5 @@
 import os
+import subprocess
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
@@ -284,9 +285,10 @@ def create_vault_ui(root):
             with open(temp_path, "wb") as f:
                 f.write(decrypted_data)
 
-            os.startfile(temp_path)  # Windows only
+            # Use subprocess to open file and wait until it's closed
+            subprocess.run(["start", "/WAIT", "", temp_path], shell=True)
 
-            input("Press Enter when done viewing...")
+            # Clean up after file is closed
             os.remove(temp_path)
             shutil.rmtree(temp_dir)
 
@@ -301,12 +303,12 @@ def create_vault_ui(root):
 
     view_btn = tk.Button(controls, text="👁️ View", bg=BG, fg=TEXT,
                          activebackground=HOVER, bd=0, font=("Terminal", 10),
-                         command=view_file(selected_file_id), state=tk.DISABLED)
+                         command=lambda: view_file(selected_file_id), state=tk.DISABLED)
     view_btn.pack(side="left", padx=10)
 
     delete_btn = tk.Button(controls, text="🗑️ Delete", bg=BG, fg=TEXT,
                            activebackground=HOVER, bd=0, font=("Terminal", 10),
-                           command=delete_file(selected_file_id), state=tk.DISABLED)
+                           command=lambda: delete_file(selected_file_id), state=tk.DISABLED)
     delete_btn.pack(side="left", padx=10)
 
     lock_btn = tk.Button(controls, text="🔐 Lock", bg=BG, fg=TEXT,
