@@ -1,7 +1,7 @@
 import os
 import subprocess
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from PIL import Image, ImageTk
 from db.db_manager import get_files_for_user, get_current_user, set_current_user, get_current_user_id
 import shutil
@@ -222,8 +222,7 @@ def create_vault_ui(root):
         )
 
     def add_file():
-        import tkinter as tk
-        from tkinter import filedialog
+
 
         root = tk.Tk()
         root.withdraw()
@@ -312,7 +311,7 @@ def create_vault_ui(root):
 
     lock_btn = tk.Button(controls, text="🔐 Lock", bg=BG, fg=TEXT,
                          activebackground=HOVER, bd=0, font=("Terminal", 10),
-                         command=root.quit)
+                         command=root.destroy())
     lock_btn.pack(side="left", padx=10)
 
     # Add hover effects to all buttons
