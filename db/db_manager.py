@@ -53,6 +53,43 @@ def close_connection():
         _connection.close()
         _connection = None
 
+def register_user_to_database(username, biometric_type, encrypted_data):
+    """
+    Save a new user and their encrypted biometric data to MySQL.
+    Used during user registration.
+    """
+    conn = get_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        # Check if the user already exists
+        cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+        result = cursor.fetchone()
+
+        if result:
+            user_id = result[0]
+        else:
+            cursor.execute("INSERT INTO users (username) VALUES (%s)", (username,))
+            user_id = cursor.lastrowid
+
+        # Insert biometric data
+        cursor.execute("""
+            INSERT INTO biometric_data (user_id, type, data)
+            VALUES (%s, %s, %s)
+        """, (user_id, biometric_type, encrypted_data))
+
+        conn.commit()
+
+        return user_id  # Return user ID in case you need to set it as current
+
+    except Error as e:
+        print(f"Error saving user and biometric data: {e}")
+
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+
 
 def get_files_for_user():
     """
