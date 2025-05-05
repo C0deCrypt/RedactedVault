@@ -311,7 +311,7 @@ def create_vault_ui(root):
 
     lock_btn = tk.Button(controls, text="🔐 Lock", bg=BG, fg=TEXT,
                          activebackground=HOVER, bd=0, font=("Terminal", 10),
-                         command=root.destroy())
+                         command=lambda: root.destroy())
     lock_btn.pack(side="left", padx=10)
 
     # Add hover effects to all buttons
