@@ -25,3 +25,4 @@ Thumbs.db
 
 # Encrypted or Vault Data (optional - to keep vault truly secret)
 vault_data/
+gui/.vault_hidden
