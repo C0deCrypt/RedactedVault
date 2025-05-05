@@ -1,6 +1,9 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from db.db_manager import get_user_id, set_current_user
+from gui.vault import create_vault_ui
+
 # Colors (same as vault)
 BG = "#1C1C1C"  # Main background
 TEXT = "#F5E8D8"  # Text color
@@ -14,7 +17,7 @@ def validate_code_input(char):
     return char in "0123456789+-/*="
 
 
-def create_auth_window():
+def create_auth_window(passed_username):
     root = tk.Tk()
     root.title("Agent Authentication")
     root.geometry("500x600")  # Slightly smaller window for login
@@ -69,10 +72,31 @@ def create_auth_window():
 
     # Authentication button
     def on_auth():
-        # TODO: Here you guys will handle authentication, because when user is clicking on Auth btn we are calling this function
-        username = username_entry.get()
-        method = bio_var.get() #is my type hai k finger use honi yaa face, dekh lena isko
-        print("Auth btn is clicked")
+        entered_username = username_entry.get().strip()
+        method = bio_var.get()
+
+        if entered_username != passed_username:
+            messagebox.showerror("Error", "Entered username does not match the unlock code.")
+            return
+
+        if method == "face":
+            from face_authentication.face_auth import authenticate_face
+            success = authenticate_face(entered_username)
+            if success:
+                user_id = get_user_id(entered_username)
+                if user_id:
+                    set_current_user(entered_username, user_id)
+                    messagebox.showinfo("Success", f"Welcome back, {entered_username}!")
+
+                    root.destroy()
+
+                    vault_root = tk.Tk()
+                    create_vault_ui(vault_root)
+                    vault_root.mainloop()
+            else:
+                messagebox.showerror("Failed", "Authentication failed.")
+        else:
+            messagebox.showinfo("Info", "Fingerprint not supported yet.")
 
     auth_btn = tk.Button(
         content, text="AUTHENTICATE",
