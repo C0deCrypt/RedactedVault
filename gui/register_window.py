@@ -97,7 +97,7 @@ def create_registration_window(parent):
         set_current_user(username, 1)
 
         if method == "face":
-            success = register_face(username)
+            success = register_face(username, code)
             if success:
                 messagebox.showinfo("Success", "Face registered successfully!")
                 root.destroy()  # Close window
