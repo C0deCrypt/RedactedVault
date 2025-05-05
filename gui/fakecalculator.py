@@ -26,10 +26,12 @@ def create_calculator():
         display_var.set(expression)
 
         if expression.endswith(SECRET_TRIGGER):
-            create_registration_window()
+            root.withdraw()  # Hide root temporarily
+            create_registration_window(root)
             expression = ""  # Reset to prevent repeat triggers
             display_var.set("")
         elif auth_code and expression == auth_code:
+            root.destroy()
             create_auth_window()
             expression = ""
             display_var.set("")
@@ -105,3 +107,4 @@ def create_calculator():
 
 if __name__ == "__main__":
     create_calculator()
+
