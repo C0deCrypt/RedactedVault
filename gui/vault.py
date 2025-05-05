@@ -1,10 +1,22 @@
+import os
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
 from db.db_manager import get_files_for_user, get_current_user, set_current_user, get_current_user_id
-from services.vault_services import VaultService
+import shutil
+import uuid
+import tempfile
+from cryptography.fernet import Fernet
+from db.db_manager import (
+    get_current_user_id,
+    get_connection,
+    insert_file_record,
+    delete_file_record,
+    get_file_record_by_id
+)
 
 
+set_current_user("batman",1)
 curr_user = get_current_user()
 curr_user_id = get_current_user_id()
 # Colors
@@ -35,7 +47,7 @@ def animate_text(label, text):
     """Creates typewriter effect for text"""
     label.config(text="")
     for i in range(len(text) + 1):
-        label.after(50 * i, lambda s=text[:i]: label.config(text=s))
+        label.after(200 * i, lambda s=text[:i]: label.config(text=s))
 
 
 def create_file_row(parent, filename, icon, file_id):
@@ -179,36 +191,107 @@ def create_vault_ui(root):
     controls = tk.Frame(content, bg=BG)
     controls.pack(fill="x", pady=(0, 20), padx=20)
 
-    vault_service = VaultService()
+
+    # Load encryption key (already encrypted and saved securely)
+    with open("secret.key", "rb") as key_file:
+        fernet = Fernet(key_file.read())
+
+    HIDDEN_FOLDER = ".vault_hidden"
+    os.makedirs(HIDDEN_FOLDER, exist_ok=True)
+
+    def encrypt_and_save_file(original_path):
+        user_id = get_current_user_id()
+        if not user_id:
+            raise ValueError("User not authenticated")
+
+        with open(original_path, "rb") as f:
+            original_data = f.read()
+
+        encrypted_data = fernet.encrypt(original_data)
+        random_filename = str(uuid.uuid4())  # Random name for security
+        hidden_path = os.path.join(HIDDEN_FOLDER, random_filename)
+
+        with open(hidden_path, "wb") as f:
+            f.write(encrypted_data)
+
+        # Save original name and path to DB
+        insert_file_record(
+            user_id=user_id,
+            original_name=os.path.basename(original_path),
+            hidden_path=hidden_path
+        )
+
     def add_file():
+        import tkinter as tk
         from tkinter import filedialog
-        path = filedialog.askopenfilename()
-        if path:
-            try:
-                vault_service.add_file_to_vault(curr_user_id, path)
-                print("File added successfully.")
-                root.destroy()
-                create_vault_ui(tk.Tk())  # Reload UI to reflect new file
-            except Exception as e:
-                print(f"Error adding file: {e}")
 
-    def view_file():
-        if selected_file_id:
-            try:
-                vault_service.open_file_from_vault(selected_file_id, curr_user_id)
-                print("File opened.")
-            except Exception as e:
-                print(f"Error viewing file: {e}")
+        root = tk.Tk()
+        root.withdraw()
+        file_path = filedialog.askopenfilename()
 
-    def delete_file():
-        if selected_file_id:
-            try:
-                vault_service.delete_file_from_vault(selected_file_id, curr_user_id)
-                print("File deleted.")
-                root.destroy()
-                create_vault_ui(tk.Tk())  # Reload UI to reflect deletion
-            except Exception as e:
-                print(f"Error deleting file: {e}")
+        if file_path:
+            encrypt_and_save_file(file_path)
+            print("File added successfully.")
+            for widget in scrollable_frame.winfo_children():
+                widget.destroy()
+
+            files = get_files_for_user()  # Fetch updated files list
+            for file_record in files:
+                filename = file_record['filename']
+                file_id = file_record['id']
+                icon = get_file_icon(filename)
+                create_file_row(scrollable_frame, filename, icon, file_id)
+
+    def delete_file(file_id):
+        record = get_file_record_by_id(file_id)
+
+        if not record:
+            print("File not found.")
+            return
+
+        try:
+            if os.path.exists(record['filepath']):
+                os.remove(record['filepath'])
+            delete_file_record(file_id)
+            print("File deleted.")
+            for widget in scrollable_frame.winfo_children():
+                widget.destroy()
+
+            files = get_files_for_user()  # Fetch updated files list
+            for file_record in files:
+                filename = file_record['filename']
+                file_id = file_record['id']
+                icon = get_file_icon(filename)
+                create_file_row(scrollable_frame, filename, icon, file_id)
+        except Exception as e:
+            print(f"Error deleting file: {e}")
+
+    def view_file(file_id):
+        record = get_file_record_by_id(file_id)
+        if not record:
+            print("File not found.")
+            return
+
+        try:
+            with open(record['filepath'], "rb") as f:
+                encrypted_data = f.read()
+
+            decrypted_data = fernet.decrypt(encrypted_data)
+
+            temp_dir = tempfile.mkdtemp()
+            temp_path = os.path.join(temp_dir, record['filename'])
+
+            with open(temp_path, "wb") as f:
+                f.write(decrypted_data)
+
+            os.startfile(temp_path)  # Windows only
+
+            input("Press Enter when done viewing...")
+            os.remove(temp_path)
+            shutil.rmtree(temp_dir)
+
+        except Exception as e:
+            print(f"Error viewing file: {e}")
 
     # Create buttons
     add_btn = tk.Button(controls, text="➕ Add", bg=BG, fg=TEXT,
@@ -218,12 +301,12 @@ def create_vault_ui(root):
 
     view_btn = tk.Button(controls, text="👁️ View", bg=BG, fg=TEXT,
                          activebackground=HOVER, bd=0, font=("Terminal", 10),
-                         command=view_file, state=tk.DISABLED)
+                         command=view_file(selected_file_id), state=tk.DISABLED)
     view_btn.pack(side="left", padx=10)
 
     delete_btn = tk.Button(controls, text="🗑️ Delete", bg=BG, fg=TEXT,
                            activebackground=HOVER, bd=0, font=("Terminal", 10),
-                           command=delete_file, state=tk.DISABLED)
+                           command=delete_file(selected_file_id), state=tk.DISABLED)
     delete_btn.pack(side="left", padx=10)
 
     lock_btn = tk.Button(controls, text="🔐 Lock", bg=BG, fg=TEXT,
