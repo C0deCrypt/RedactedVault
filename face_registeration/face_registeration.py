@@ -2,25 +2,26 @@ import cv2
 import face_recognition
 from cryptography.fernet import Fernet
 import os
-from db.db_manager import set_current_user, get_current_user_id, add_file_to_vault, get_user_encryption_key
+from db.db_manager import set_current_user, get_current_user_id, get_user_encryption_key, register_user_to_database
 from db.db_manager import log_access
 
 # Secret code trigger
 SECRET_TRIGGER = "0000+-"
 
-# Colors
-BG = "#1C1C1C"
-TEXT = "#F5E8D8"
-CORAL = "#FF6F61"
-GOLD = "#DAA520"
-HOVER = "#FF4500"
-BORDER = "#333333"
-BTN_BG = "#252525"
-EQUAL_BTN = "#FF6F00"
-EQUAL_HOVER = "#FF8C00"
 
 expression = ""
 
+def generate_key():
+    """Generate a new encryption key if not already present."""
+    if not os.path.exists("secret.key"):
+        key = Fernet.generate_key()
+        with open("secret.key", "wb") as key_file:
+            key_file.write(key)
+
+def load_key():
+    """Load the saved encryption key."""
+    with open("secret.key", "rb") as key_file:
+        return key_file.read()
 
 def register_face(username):
     """Function to register a user face and store the data in the database."""
@@ -54,12 +55,9 @@ def register_face(username):
 
     if face_encoding is not None:
         # Get or generate encryption key
-        key = get_user_encryption_key(get_current_user_id())
-        if not key:
-            key = Fernet.generate_key()  # Generate a new key if not found
-            # Save the key to the database (this should be handled securely)
-            # Update user's encryption key (you should already have user ID set after authentication)
-            # save_user_encryption_key(get_current_user_id(), key)
+        generate_key()
+        key = load_key()
+
 
         # Convert face encoding to a string (required for encryption)
         encoding_str = ','.join(map(str, face_encoding))
@@ -70,12 +68,11 @@ def register_face(username):
 
         # Save encrypted data to the database
         print("Saving face data to the database...")
-        # You could modify this function to save the face data directly, or use a similar structure to storing files
-        file_id = add_file_to_vault(get_current_user_id(), encrypted_data, "face_encoding.dat")
-        print(f"Face encoding saved to vault with file ID: {file_id}")
+        register_user_to_database(username, "face", encrypted_data)
 
-        # Optional: Log the registration attempt
-        log_access("face_registration", f"Face registered for {username}")
+
+        # logs will be saved for file crud and logins NOT REGISTER
+        # log_access("face_registration", f"Face registered for {username}")
 
         print(f"🎉 {username} registered successfully!")
         return True
