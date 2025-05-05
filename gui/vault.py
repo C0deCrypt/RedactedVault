@@ -17,9 +17,6 @@ from db.db_manager import (
 )
 
 
-set_current_user("batman",1)
-curr_user = get_current_user()
-curr_user_id = get_current_user_id()
 # Colors
 BG = "#1C1C1C"  # Main background
 TEXT = "#F5E8D8"  # Text color
@@ -127,6 +124,8 @@ def update_button_states():
 def create_vault_ui(root):
     """Main function to create the vault interface"""
     global view_btn, delete_btn  # Make buttons accessible for state updates
+    curr_user = get_current_user()
+    curr_user_id = get_current_user_id()
 
     # Window setup
     root.geometry("1280x720")
@@ -142,7 +141,7 @@ def create_vault_ui(root):
     content.pack(fill="both", expand=True)
 
     # User profile header
-    header = create_user_header(content)
+    header = create_user_header(content, curr_user)
 
     # File display area with scroll
     file_container = tk.Frame(content, bg=BORDER, padx=1, pady=1)
@@ -323,7 +322,7 @@ def create_vault_ui(root):
         btn.config(highlightbackground=BORDER, highlightthickness=1)
 
 
-def create_user_header(parent):
+def create_user_header(parent, curr_user):
     """Creates the user profile header section"""
     header = tk.Frame(parent, bg=BG, bd=0)
     header.pack(fill="x", pady=(20, 10), padx=20)
