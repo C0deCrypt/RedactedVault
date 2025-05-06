@@ -90,16 +90,21 @@ For more technical details, biometric implementation, and database schema, check
 
 
 ````
+
 RedactedVault/
-├── calculator/             # Calculator GUI + Logic
-├── vault/                  # Vault logic (encryption, DB, file handling)
-├── auth/                   # Auth2X integration code
-│   └── face\_auth.py
-│   └── fingerprint\_auth.py
-├── gui/                    # Tkinter-based UI windows
-├── config/                 # DB config, secret.key, etc.
-├── db/                     # Database interaction scripts
-└── main.py                 # App entry point (launches calculator)
+├── db/
+│   └── db_manager.py         # Handles DB operations (fetch/save user/files)
+├── face_authentication/
+│   └── face_auth.py          # Handles face authentication logic
+├── fac_registeration/
+│   ├── face_registeration.py
+│   └── secret.key            
+├── gui/
+│   ├── vault.py              # Vault logic: encryption, file ops, viewing
+│   ├── authenticate_window.py
+│   ├── fakecalculator.py     # 🔹 Entry point: Main calculator app
+│   ├── register_window\.py   
+│   ├── secret.key       
 
 ````
 
@@ -107,21 +112,17 @@ RedactedVault/
 
 ## 🧪 How to Run
 
-1. **Install dependencies:**
+ **Install dependencies:**
 
 ```bash
-pip install cryptography opencv-python-headless face_recognition mysql-connector-python pillow
+pip install pillow face_recognition opencv-python cryptography mysql-connector-python sv-ttk numpy
 ````
+> 💡 Don't forget to also install and configure **MySQL Server** locally and set up the `.env` file correctly.
 
-2. **Set up MySQL DB** using [Auth2X schema](https://github.com/C0deCrypt/Auth2X#2-mysql-schema).
+ **Run the app:**
+> 🔹 **Run** : `gui/fakecalculator.py`
 
-3. **Configure DB credentials** in `config/db_config.json`.
 
-4. **Run the app:**
-
-```bash
-python main.py
-```
 
 ---
 
