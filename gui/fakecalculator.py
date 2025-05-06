@@ -4,10 +4,11 @@ from db.db_manager import get_username_by_unlock_code
 from gui.authenticate_window import create_auth_window
 from gui.register_window import create_registration_window
 
-# === Constants ===
+# Constants
 SECRET_TRIGGER = "0000+-"
+expression = ""
 
-# === Colors ===
+# Colors
 BG = "#1C1C1C"
 TEXT = "#F5E8D8"
 CORAL = "#FF6F61"
@@ -26,9 +27,9 @@ class SmartCalcVault(tk.Tk):
         self.geometry("350x500")
         self.configure(bg=BG)
         self.resizable(False, False)
+
         self.equation = ""
 
-        # === Display ===
         container = tk.Frame(self, bg=BG)
         container.pack(fill="both", expand=True, padx=10, pady=10)
 
@@ -37,7 +38,6 @@ class SmartCalcVault(tk.Tk):
                                 highlightthickness=1, highlightbackground=BORDER)
         self.display.pack(fill="x", pady=(0, 10), ipady=10)
 
-        # === Buttons ===
         button_frame = tk.Frame(container, bg=BG)
         button_frame.pack(fill="both", expand=True)
 
@@ -63,7 +63,7 @@ class SmartCalcVault(tk.Tk):
             self.add_btn_animations(btn, val)
             btn.bind("<Button-1>", lambda e, char=val: self.on_button_click(char))
 
-        # === Equal Button ===
+        # Equal button
         equal_btn = tk.Label(button_frame, text='=', font=("Terminal", 18),
                              bg=EQUAL_BTN, fg=TEXT, bd=0, padx=10, pady=10)
         equal_btn.grid(row=3, column=3, rowspan=2, sticky="nsew", padx=2, pady=2)
@@ -88,40 +88,21 @@ class SmartCalcVault(tk.Tk):
 
         self.update_display()
 
-        # === Vault Trigger ===
+        # Logic for registration/authentication
         if self.equation.endswith(SECRET_TRIGGER):
             self.withdraw()
             create_registration_window(self)
             self.equation = ""
             self.update_display()
-            return
-
-        # === Authentication Trigger ===
-        if len(self.equation) >= 6:
+        elif len(self.equation) >= 6:
             username = get_username_by_unlock_code(self.equation)
-
-            if not username:
-                print(f"[DEBUG] No username found for unlock code: {self.equation}")
+            if username:
+                self.destroy()
+                create_auth_window(username)
+            else:
                 messagebox.showerror("Error", "Invalid unlock code.")
-                self.equation = ""
-                self.update_display()
-                return
-
-            if isinstance(username, tuple):
-                username = username[0]
-            if not isinstance(username, str):
-                messagebox.showerror("Error", "Corrupted username from DB.")
-                return
-
-            try:
-                username = username.strip()
-            except Exception as e:
-                print(f"[ERROR] Username strip failed: {e}")
-                messagebox.showerror("Error", f"Authentication error: {e}")
-                return
-
-            self.destroy()
-            create_auth_window(username)
+            self.equation = ""
+            self.update_display()
 
     def update_display(self):
         self.display.delete(0, tk.END)
@@ -138,8 +119,7 @@ class SmartCalcVault(tk.Tk):
 
     def add_btn_animations(self, widget, val):
         widget.bind("<Enter>", lambda e: widget.config(fg=HOVER, font=("Terminal", 20, "bold")))
-        widget.bind("<Leave>", lambda e: widget.config(
-            fg=CORAL if val in ['AC', 'CE'] else TEXT, font=("Terminal", 18)))
+        widget.bind("<Leave>", lambda e: widget.config(fg=CORAL if val in ['AC', 'CE'] else TEXT,  font=("Terminal", 18)))
 
     def add_equal_hover(self, widget):
         widget.bind("<Enter>", lambda e: widget.config(bg=EQUAL_HOVER, font=("Terminal", 20, "bold")))
