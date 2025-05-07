@@ -19,7 +19,7 @@ def validate_code_input(char):
 
 
 def create_registration_window(parent):
-    root = tk.Tk()
+    root = tk.Toplevel(parent)
     root.title("Agent Registration")
     root.geometry("500x600")
     root.configure(bg="#000000")
@@ -65,7 +65,7 @@ def create_registration_window(parent):
     tk.Label(content, text="Biometric Authentication:",
              bg=BG, fg=TEXT, font=("Terminal", 12)).pack(anchor="w", padx=20, pady=(15, 5))
 
-    bio_var = tk.StringVar(value="")
+    bio_var = tk.StringVar(value="face")
 
     frame = tk.Frame(content, bg=BG)
     frame.pack(fill="x", padx=20)
@@ -90,8 +90,6 @@ def create_registration_window(parent):
         username = username_entry.get().strip()
         code = code_entry.get().strip()
         method = bio_var.get()
-        test_var=bio_var.get()
-        print('test_var ',test_var)
         if not method:
             messagebox.showerror("Error", "Please select a biometric authentication method.")
             return
@@ -99,8 +97,6 @@ def create_registration_window(parent):
             messagebox.showerror("Error", "Please fill in all fields.")
             return
 
-        # Set the current user (replace 1 with actual user_id if needed)
-        set_current_user(username, 1)
 
         if method == "face":
             success = register_face(username, code)
@@ -112,11 +108,11 @@ def create_registration_window(parent):
                 messagebox.showerror("Failed", "Face registration failed.")
         else:
             try:
-                # ✅ Run capture EXE
+                #  Run capture EXE
                 exe_path = os.path.abspath("../fingerprint/capture/CaptureFingerprint/x64/Debug/CaptureFingerprint.exe")
                 subprocess.run([exe_path, username], check=True)
 
-                # ✅ Run store_template.py
+                #  Run store_template.py
                 store_script = os.path.abspath("../fingerprint/store_template.py")
                 subprocess.run([sys.executable, store_script, username, code], check=True)
 
