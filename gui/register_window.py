@@ -65,7 +65,7 @@ def create_registration_window(parent):
     tk.Label(content, text="Biometric Authentication:",
              bg=BG, fg=TEXT, font=("Terminal", 12)).pack(anchor="w", padx=20, pady=(15, 5))
 
-    bio_var = tk.StringVar(value="finger")
+    bio_var = tk.StringVar(value="")
 
     frame = tk.Frame(content, bg=BG)
     frame.pack(fill="x", padx=20)
@@ -90,6 +90,9 @@ def create_registration_window(parent):
         username = username_entry.get().strip()
         code = code_entry.get().strip()
         method = bio_var.get()
+        if not method:
+            messagebox.showerror("Error", "Please select a biometric authentication method.")
+            return
 
         if not username or not code:
             messagebox.showerror("Error", "Please fill in all fields.")
