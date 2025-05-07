@@ -2,7 +2,9 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from face_registeration.face_registeration import register_face
 from db.db_manager import set_current_user
-
+import subprocess
+import os
+import sys
 # Colors (same as vault)
 BG = "#1C1C1C"  # Main background
 TEXT = "#F5E8D8"  # Text color
@@ -63,7 +65,7 @@ def create_registration_window(parent):
     tk.Label(content, text="Biometric Authentication:",
              bg=BG, fg=TEXT, font=("Terminal", 12)).pack(anchor="w", padx=20, pady=(15, 5))
 
-    bio_var = tk.StringVar(value="face")
+    bio_var = tk.StringVar(value="finger")
 
     frame = tk.Frame(content, bg=BG)
     frame.pack(fill="x", padx=20)
@@ -105,7 +107,23 @@ def create_registration_window(parent):
             else:
                 messagebox.showerror("Failed", "Face registration failed.")
         else:
-            messagebox.showinfo("Info", "Fingerprint not supported yet.")
+            try:
+                # ✅ Run capture EXE
+                exe_path = os.path.abspath("../fingerprint/capture/CaptureFingerprint/x64/Debug/CaptureFingerprint.exe")
+                subprocess.run([exe_path, username], check=True)
+
+                # ✅ Run store_template.py
+                store_script = os.path.abspath("../fingerprint/store_template.py")
+                subprocess.run([sys.executable, store_script, username, code], check=True)
+
+                messagebox.showinfo("Success", "Fingerprint registered successfully!")
+                root.destroy()
+                if parent: parent.deiconify()
+
+            except subprocess.CalledProcessError as e:
+                messagebox.showerror("Error", f"Fingerprint registration failed: {e}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Unexpected error: {e}")
 
     register_btn = tk.Button(
         content, text="REGISTRATION",

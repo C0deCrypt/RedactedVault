@@ -1,9 +1,10 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-
 from db.db_manager import get_user_id, set_current_user
 from gui.vault import create_vault_ui
-
+import subprocess
+import sys
+import os
 # Colors (same as vault)
 BG = "#1C1C1C"  # Main background
 TEXT = "#F5E8D8"  # Text color
@@ -96,7 +97,46 @@ def create_auth_window(passed_username):
             else:
                 messagebox.showerror("Failed", "Authentication failed.")
         else:
-            messagebox.showinfo("Info", "Fingerprint not supported yet.")
+            try:
+                # Step 1: Capture fingerprint
+                capture_exe = os.path.abspath(
+                    "../fingerprint/capture/CaptureFingerprint/x64/Debug/CaptureFingerprint.exe"
+                )
+                try:
+                    subprocess.run(
+                        [capture_exe, entered_username + "_live"],
+                        check=True,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL
+                    )
+                except Exception as e:
+                    messagebox.showerror("Capture Error", f"Failed to capture fingerprint: {e}")
+                    return
+
+                # Step 2: Match fingerprint
+                match_script = os.path.abspath("../fingerprint/match template.py")
+                result = subprocess.run(
+                    [sys.executable, match_script, entered_username],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+
+                output = result.stdout.decode(errors="ignore").strip()
+                print("[MATCH OUTPUT]:", output)
+
+                if "AUTH_SUCCESS" in output:
+                    user_id = get_user_id(entered_username)
+                    if user_id:
+                        set_current_user(entered_username, user_id)
+                        messagebox.showinfo("Success", f"Welcome back, {entered_username}!")
+                        root.destroy()
+                        vault_root = tk.Tk()
+                        create_vault_ui(vault_root)
+                        vault_root.mainloop()
+                else:
+                    messagebox.showerror("Failed", "Fingerprint match failed.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Authentication error: {e}")
 
     auth_btn = tk.Button(
         content, text="AUTHENTICATE",

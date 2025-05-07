@@ -64,7 +64,7 @@ def authenticate_fingerprint(username):
 
     print(f"[DEBUG] Matches: {matches}, Ratio: {ratio:.3f}")
 
-    if ratio > 0.60:
+    if ratio > 0.70:
         print("✅ Fingerprint match successful.")
         return True
     else:
