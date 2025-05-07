@@ -75,6 +75,8 @@ def create_auth_window(passed_username):
     def on_auth():
         entered_username = username_entry.get().strip()
         method = bio_var.get()
+        test_var = bio_var.get()
+        print('test_var ', test_var)
         if not method:
             messagebox.showerror("Error", "Please select a biometric authentication method.")
             return

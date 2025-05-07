@@ -90,10 +90,11 @@ def create_registration_window(parent):
         username = username_entry.get().strip()
         code = code_entry.get().strip()
         method = bio_var.get()
+        test_var=bio_var.get()
+        print('test_var ',test_var)
         if not method:
             messagebox.showerror("Error", "Please select a biometric authentication method.")
             return
-
         if not username or not code:
             messagebox.showerror("Error", "Please fill in all fields.")
             return
