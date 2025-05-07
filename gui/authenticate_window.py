@@ -52,7 +52,7 @@ def create_auth_window(passed_username):
     tk.Label(content, text="Biometric Authentication:",
              bg=BG, fg=TEXT, font=("Terminal", 12)).pack(anchor="w", padx=20, pady=(15, 5))
 
-    bio_var = tk.StringVar(value="face")
+    bio_var = tk.StringVar(value="")
 
     frame = tk.Frame(content, bg=BG)
     frame.pack(fill="x", padx=20)
@@ -75,6 +75,9 @@ def create_auth_window(passed_username):
     def on_auth():
         entered_username = username_entry.get().strip()
         method = bio_var.get()
+        if not method:
+            messagebox.showerror("Error", "Please select a biometric authentication method.")
+            return
 
         if entered_username != passed_username:
             messagebox.showerror("Error", "Entered username does not match the unlock code.")
