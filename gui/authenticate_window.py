@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from db.db_manager import get_user_id, set_current_user
+from face_authentication.face_auth import authenticate_face
 from gui.vault import create_vault_ui
 import subprocess
 import sys
@@ -52,7 +53,7 @@ def create_auth_window(passed_username):
     tk.Label(content, text="Biometric Authentication:",
              bg=BG, fg=TEXT, font=("Terminal", 12)).pack(anchor="w", padx=20, pady=(15, 5))
 
-    bio_var = tk.StringVar(value="")
+    bio_var = tk.StringVar(value="face")
 
     frame = tk.Frame(content, bg=BG)
     frame.pack(fill="x", padx=20)
@@ -75,8 +76,6 @@ def create_auth_window(passed_username):
     def on_auth():
         entered_username = username_entry.get().strip()
         method = bio_var.get()
-        test_var = bio_var.get()
-        print('test_var ', test_var)
         if not method:
             messagebox.showerror("Error", "Please select a biometric authentication method.")
             return
@@ -86,7 +85,6 @@ def create_auth_window(passed_username):
             return
 
         if method == "face":
-            from face_authentication.face_auth import authenticate_face
             success = authenticate_face(entered_username)
             if success:
                 user_id = get_user_id(entered_username)
