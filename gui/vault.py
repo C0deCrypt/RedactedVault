@@ -8,6 +8,8 @@ import shutil
 import uuid
 import tempfile
 from cryptography.fernet import Fernet
+import threading
+import time
 from db.db_manager import (
     get_current_user_id,
     get_connection,
@@ -15,7 +17,6 @@ from db.db_manager import (
     delete_file_record,
     get_file_record_by_id
 )
-
 
 # Colors
 BG = "#1C1C1C"  # Main background
@@ -283,12 +284,22 @@ def create_vault_ui(root):
             with open(temp_path, "wb") as f:
                 f.write(decrypted_data)
 
-            # Use subprocess to open file and wait until it's closed
-            subprocess.run(["start", "/WAIT", "", temp_path], shell=True)
+                # Open file using default program
+                os.startfile(temp_path)
 
-            # Clean up after file is closed
-            os.remove(temp_path)
-            shutil.rmtree(temp_dir)
+                # Run cleanup in background after delay
+                def delayed_cleanup():
+                    time.sleep(30)  # give user 30 seconds to view it
+                    try:
+                        if os.path.exists(temp_path):
+                            os.remove(temp_path)
+                        if os.path.exists(temp_dir):
+                            shutil.rmtree(temp_dir)
+                        print("Temporary file cleaned up.")
+                    except Exception as e:
+                        print(f"Error during cleanup: {e}")
+
+                threading.Thread(target=delayed_cleanup).start()
 
         except Exception as e:
             print(f"Error viewing file: {e}")
