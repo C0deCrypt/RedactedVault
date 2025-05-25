@@ -1,9 +1,9 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "D:\\repositoryafter-presentation\\RedactedVault\\fingerprint\\capture\\CaptureFingerprint\\",
+  "WorkspaceRootPath": "D:\\RedactedVault\\fingerprint\\capture\\CaptureFingerprint\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{7A1ABF8A-28E6-4936-8586-8040AB7C68E9}|CaptureFingerprint\\CaptureFingerprint.vcxproj|D:\\repositoryafter-presentation\\RedactedVault\\fingerprint\\capture\\CaptureFingerprint\\CaptureFingerprint\\CaptureFingerprint.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{7A1ABF8A-28E6-4936-8586-8040AB7C68E9}|CaptureFingerprint\\CaptureFingerprint.vcxproj|D:\\RedactedVault\\fingerprint\\capture\\CaptureFingerprint\\CaptureFingerprint\\CaptureFingerprint.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{7A1ABF8A-28E6-4936-8586-8040AB7C68E9}|CaptureFingerprint\\CaptureFingerprint.vcxproj|solutionrelative:CaptureFingerprint\\CaptureFingerprint.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
@@ -24,11 +24,11 @@
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "CaptureFingerprint.cpp",
-              "DocumentMoniker": "D:\\repositoryafter-presentation\\RedactedVault\\fingerprint\\capture\\CaptureFingerprint\\CaptureFingerprint\\CaptureFingerprint.cpp",
+              "DocumentMoniker": "D:\\RedactedVault\\fingerprint\\capture\\CaptureFingerprint\\CaptureFingerprint\\CaptureFingerprint.cpp",
               "RelativeDocumentMoniker": "CaptureFingerprint\\CaptureFingerprint.cpp",
-              "ToolTip": "D:\\repositoryafter-presentation\\RedactedVault\\fingerprint\\capture\\CaptureFingerprint\\CaptureFingerprint\\CaptureFingerprint.cpp",
-              "RelativeToolTip": "CaptureFingerprint\\CaptureFingerprint.cpp",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAABIAAAAAAAAAAAAAAA==",
+              "ToolTip": "D:\\RedactedVault\\fingerprint\\capture\\CaptureFingerprint\\CaptureFingerprint\\CaptureFingerprint.cpp*",
+              "RelativeToolTip": "CaptureFingerprint\\CaptureFingerprint.cpp*",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAAsAAABAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2025-05-05T21:57:11.052Z",
               "EditorCaption": ""

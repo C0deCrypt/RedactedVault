@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
     }
 
     string username = argv[1];
-    string dirPath = "D:/repositoryafter-presentation/RedactedVault/fingerprint/fingerprints/";
+    string dirPath = "D:/RedactedVault/fingerprint/fingerprints/";
     string filePath = dirPath + "/" + username + ".dat";
 
     // ✅ Create folder if not exists
