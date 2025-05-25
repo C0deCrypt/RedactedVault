@@ -3,7 +3,7 @@ import sys
 import json
 import numpy as np
 from cryptography.fernet import Fernet
-from match_utils import preprocess_fingerprint, extract_minutiae, compare_minutiae
+from fingerprint.match_utils import preprocess_fingerprint, extract_minutiae, compare_minutiae
 from db.db_manager import fetch_user_biometric, get_user_unlock_code
 
 IMG_WIDTH, IMG_HEIGHT = 260, 300
