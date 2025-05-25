@@ -3,7 +3,7 @@ import os
 import json
 import numpy as np
 from cryptography.fernet import Fernet
-from match_utils import preprocess_fingerprint, extract_minutiae
+from fingerprint.match_utils import preprocess_fingerprint, extract_minutiae
 from db.db_manager import register_user_to_database
 
 def generate_aes_key():
