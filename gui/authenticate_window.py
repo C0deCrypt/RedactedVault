@@ -117,7 +117,7 @@ def create_auth_window(passed_username):
                     return
 
                 # Step 2: Match fingerprint
-                match_script = os.path.abspath("../fingerprint/match template.py")
+                match_script = os.path.abspath("../fingerprint/match_template.py")
                 result = subprocess.run(
                     [sys.executable, match_script, entered_username],
                     stdout=subprocess.PIPE,
