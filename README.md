@@ -69,8 +69,8 @@ For more technical details, biometric implementation, and database schema, check
 |-------------------|----------------------------------------|
 | **Ayaan Ahmed Khan**  | Vault Logic + GUI Design + File Encryption & Handling |
 | **Muhammad Talal** | Vault Logic + File Encryption & Handling |
-| **Ramlah Munir**  | Integrated Face & Fingerprint Auth (Auth2X) |
-| **Mohammad Umar Nasir** | Face/Fingerprint Auth Integration (Auth2X) + Calculator Logic |
+| **Ramlah Munir**  | Integrated Fingerprint Auth (Auth2X) |
+| **Mohammad Umar Nasir** | Face Auth Integration (Auth2X) + Calculator Logic |
 
 
 ---
