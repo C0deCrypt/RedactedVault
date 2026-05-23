@@ -15,7 +15,8 @@ from db.db_manager import (
     get_connection,
     insert_file_record,
     delete_file_record,
-    get_file_record_by_id
+    get_file_record_by_id,
+    log_vault_access
 )
 
 # Colors
@@ -221,6 +222,7 @@ def create_vault_ui(root):
             original_name=os.path.basename(original_path),
             hidden_path=hidden_path
         )
+        log_vault_access(user_id, 'file_add', f"Added file: {os.path.basename(original_path)}")
 
     def add_file():
 
@@ -254,6 +256,7 @@ def create_vault_ui(root):
                 os.remove(record['filepath'])
             delete_file_record(file_id)
             print("File deleted.")
+            log_vault_access(get_current_user_id(), 'file_delete', f"Deleted file: {record['filename']}")
             for widget in scrollable_frame.winfo_children():
                 widget.destroy()
 
@@ -286,6 +289,7 @@ def create_vault_ui(root):
 
                 # Open file using default program
                 os.startfile(temp_path)
+                log_vault_access(get_current_user_id(), 'file_open', f"Opened file: {record['filename']}")
 
                 # Run cleanup in background after delay
                 def delayed_cleanup():

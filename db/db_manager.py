@@ -275,3 +275,22 @@ def get_file_record_by_id(file_id):
     finally:
         if 'cursor' in locals():
             cursor.close()
+            
+def log_vault_access(user_id, event_type, details=None):
+    """
+    Saves an activity log into the vault_access_logs table.
+    Matches the specific ENUM types defined in the schema.
+    """
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO vault_access_logs (user_id, event_type, details)
+            VALUES (%s, %s, %s)
+        """, (user_id, event_type, details))
+        conn.commit()
+    except Error as e:
+        print(f"Error saving access log: {e}")
+    finally:
+        if 'cursor' in locals():
+            cursor.close()

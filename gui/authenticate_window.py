@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from db.db_manager import get_user_id, set_current_user
 from face_authentication.face_auth import authenticate_face
+from db.db_manager import get_user_id, set_current_user, log_vault_access
 from gui.vault import create_vault_ui
 import subprocess
 import sys
@@ -90,6 +91,7 @@ def create_auth_window(passed_username):
                 user_id = get_user_id(entered_username)
                 if user_id:
                     set_current_user(entered_username, user_id)
+                    log_vault_access(user_id, 'login_success', 'Face Authentication')
                     messagebox.showinfo("Success", f"Welcome back, {entered_username}!")
 
                     root.destroy()
@@ -131,6 +133,7 @@ def create_auth_window(passed_username):
                     user_id = get_user_id(entered_username)
                     if user_id:
                         set_current_user(entered_username, user_id)
+                        log_vault_access(user_id, 'login_success', 'Fingerprint Authentication')
                         messagebox.showinfo("Success", f"Welcome back, {entered_username}!")
                         root.destroy()
                         vault_root = tk.Tk()
